@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>AI Trading Terminal</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+    background:#0f1117;
+    color:white;
+    font-family:Arial;
+    padding:20px;
+}
+
+.card{
+    background:#1a1d26;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:12px;
+}
+
+h1{
+    color:#00ffcc;
+}
+
+.metric{
+    font-size:20px;
+    margin-bottom:10px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    padding:10px;
+    border-bottom:1px solid #333;
+    text-align:center;
+}
+
+.buy{
+    color:#00ff66;
+}
+
+.sell{
+    color:#ff4444;
+}
+
+input{
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    margin-bottom:15px;
+    width:200px;
+}
+
+button{
+    padding:10px 15px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+canvas{
+    background:#111;
+    border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🤖 AI Trading Terminal</h1>
+
+<!-- PERFORMANCE -->
+
+<div class="card">
+
+<h2>Performance Metrics</h2>
+
+<div id="metrics"></div>
+
+</div>
+
+<!-- EQUITY CURVE -->
+
+<div class="card">
+
+<h2>Portfolio Equity Curve</h2>
+
+<canvas id="equityChart"></canvas>
+
+</div>
+
+<!-- LIVE CHART -->
+
+<div class="card">
+
+<h2>Live Candlestick Chart</h2>
+
+<input
+    type="text"
+    id="symbolInput"
+    placeholder="Enter Symbol"
+    value="NVDA"
+/>
+
+<button onclick="loadCandles()">
+Load Chart
+</button>
+
+<canvas id="candlestickChart"></canvas>
+
+</div>
+<!-- ML PREDICTION -->
+
+<div class="card">
+
+<h2>🧠 AI Price Prediction</h2>
+
+<input
+    type="text"
+    id="predictSymbol"
+    placeholder="Symbol"
+    value="NVDA"
+/>
+
+<button onclick="loadPrediction()">
+Run AI Prediction
+</button>
+
+<div id="predictionResult"></div>
+
+</div>
+<!-- STOCK TABLE -->
+
+<div class="card">
+
+<h2>Top AI Stocks</h2>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Symbol</th>
+<th>Price</th>
+<th>Signal</th>
+<th>AI Score</th>
+</tr>
+
+</thead>
+
+<tbody id="stocks"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+let equityChart = null;
+let candleChart = null;
+
+// =========================================
+// Metrics
+// =========================================
+
+async function loadMetrics(){
+
+    const response = await fetch(
+        "http://127.0.0.1:8000/performance"
+    );
+
+    const data = await response.json();
+
+    document.getElementById("metrics").innerHTML = `
+
+        <div class="metric">
+        💰 Profit: $${data.total_profit}
+        </div>
+
+        <div class="metric">
+        🎯 Win Rate: ${data.win_rate}%
+        </div>
+
+        <div class="metric">
+        📈 Trades: ${data.total_trades}
+        </div>
+
+        <div class="metric">
+        ✅ Wins: ${data.wins}
+        </div>
+
+        <div class="metric">
+        ❌ Losses: ${data.losses}
+        </div>
+    `;
+}
+
+// =========================================
+// Equity Curve
+// =========================================
+
+async function loadEquityCurve(){
+
+    const response = await fetch(
+        "http://127.0.0.1:8000/equity-curve"
+    );
+
+    const data = await response.json();
+
+    const ctx = document
+        .getElementById("equityChart")
+        .getContext("2d");
+
+    if(equityChart){
+        equityChart.destroy();
+    }
+
+    equityChart = new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+
+            labels: data.equity.map((_,i)=>i),
+
+            datasets: [{
+
+                label: "Equity",
+
+                data: data.equity,
+
+                borderWidth: 2
+            }]
+        }
+    });
+}
+
+// =========================================
+// Candlestick Chart
+// =========================================
+
+async function loadCandles(){
+// =========================================
+// ML Prediction
+// =========================================
+
+async function loadPrediction(){
+
+    const symbol = document
+        .getElementById("predictSymbol")
+        .value;
+
+    const response = await fetch(
+        `http://127.0.0.1:8000/predict/${symbol}`
+    );
+
+    const data = await response.json();
+
+    document.getElementById(
+        "predictionResult"
+    ).innerHTML = `
+
+        <div class="metric">
+        Symbol: ${data.symbol}
+        </div>
+
+        <div class="metric">
+        Current Price: $${data.current_price}
+        </div>
+
+        <div class="metric">
+        Predicted Price: $${data.predicted_price}
+        </div>
+
+        <div class="metric">
+        Trend: ${data.trend}
+        </div>
+
+        <div class="metric">
+        Confidence: ${data.confidence}%
+        </div>
+
+        <div class="metric">
+        Model Error: ${data.mae_error}
+        </div>
+    `;
+}
+    const symbol = document
+        .getElementById("symbolInput")
+        .value;
+
+    const response = await fetch(
+        `http://127.0.0.1:8000/chart/${symbol}`
+    );
+
+    const data = await response.json();
+
+    const candles = data.candles;
+
+    const labels = candles.map(c=>c.time);
+
+    const closes = candles.map(c=>c.close);
+
+    const ctx = document
+        .getElementById("candlestickChart")
+        .getContext("2d");
+
+    if(candleChart){
+        candleChart.destroy();
+    }
+
+    candleChart = new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+
+                label: `${symbol} Price`,
+
+                data: closes,
+
+                borderWidth: 2
+            }]
+        }
+    });
+}
+
+// =========================================
+// Stocks
+// =========================================
+
+async function loadStocks(){
+
+    const response = await fetch(
+        "http://127.0.0.1:8000/top-stocks"
+    );
+
+    const data = await response.json();
+
+    const table = document.getElementById("stocks");
+
+    table.innerHTML = "";
+
+    data.data.forEach(stock => {
+
+        let cls = stock.signal.includes("BUY")
+            ? "buy"
+            : "sell";
+
+        table.innerHTML += `
+
+        <tr>
+            <td>${stock.symbol}</td>
+            <td>$${stock.price}</td>
+            <td class="${cls}">
+                ${stock.signal}
+            </td>
+            <td>${stock.ai_score}</td>
+        </tr>
+        `;
+    });
+}
+
+// =========================================
+// Refresh
+// =========================================
+
+async function refreshAll(){
+
+    await loadMetrics();
+
+    await loadEquityCurve();
+
+    await loadStocks();
+}
+
+refreshAll();
+
+loadCandles();
+
+setInterval(refreshAll, 10000);
+
+</script>
+
+</body>
+</html>
