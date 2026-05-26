@@ -95,11 +95,13 @@ def train_model(symbol="NVDA"):
 
     latest_features = X.iloc[-1:]
 
-    next_price = model.predict(
-        latest_features
-    )[0]
+    next_price = float(
+        model.predict(latest_features)[0]
+    )
 
-    current_price = full_df["Close"].iloc[-1]
+    current_price = float(
+        full_df["Close"].iloc[-1]
+    )
 
     trend = (
         "BULLISH"
