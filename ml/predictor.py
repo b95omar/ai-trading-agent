@@ -4,11 +4,10 @@ import numpy as np
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
-
-from xgboost import XGBRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 # =========================================
-# Download Historical Data
+# Load Data
 # =========================================
 
 def load_data(symbol="NVDA"):
@@ -44,7 +43,6 @@ def create_features(df):
     df.dropna(inplace=True)
 
     features = [
-
         "Open",
         "High",
         "Low",
@@ -78,10 +76,9 @@ def train_model(symbol="NVDA"):
         shuffle=False
     )
 
-    model = XGBRegressor(
+    model = RandomForestRegressor(
         n_estimators=100,
-        max_depth=4,
-        learning_rate=0.05
+        random_state=42
     )
 
     model.fit(X_train, y_train)
@@ -95,6 +92,8 @@ def train_model(symbol="NVDA"):
 
     latest_features = X.iloc[-1:]
 
+    # FORCE REAL FLOAT VALUES
+
     next_price = float(
         model.predict(latest_features)[0]
     )
@@ -103,28 +102,38 @@ def train_model(symbol="NVDA"):
         full_df["Close"].iloc[-1]
     )
 
-    trend = (
-        "BULLISH"
-        if next_price > current_price
-        else "BEARISH"
-    )
+    # TREND
 
-    confidence = max(
-        0,
-        round(100 - error, 2)
+    if next_price > current_price:
+        trend = "BULLISH"
+    else:
+        trend = "BEARISH"
+
+    confidence = round(
+        max(0, 100 - error),
+        2
     )
 
     return {
 
         "symbol": symbol,
 
-        "current_price": round(float(current_price), 2),
+        "current_price": round(
+            current_price,
+            2
+        ),
 
-        "predicted_price": round(float(next_price), 2),
+        "predicted_price": round(
+            next_price,
+            2
+        ),
 
         "trend": trend,
 
         "confidence": confidence,
 
-        "mae_error": round(float(error), 2)
+        "mae_error": round(
+            float(error),
+            2
+        )
     }
