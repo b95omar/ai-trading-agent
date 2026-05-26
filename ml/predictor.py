@@ -95,11 +95,11 @@ def train_model(symbol="NVDA"):
     # FORCE REAL FLOAT VALUES
 
     next_price = float(
-        model.predict(latest_features)[0]
+        model.predict(latest_features).item()
     )
 
     current_price = float(
-        full_df["Close"].iloc[-1]
+        full_df["Close"].values[-1]
     )
 
     # TREND
