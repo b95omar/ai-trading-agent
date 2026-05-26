@@ -94,8 +94,8 @@ def train_model(symbol="NVDA"):
 
     # FORCE REAL FLOAT VALUES
 
-    next_price = float(
-        model.predict(latest_features).item()
+    current_price = float(
+        full_df["Close"].dropna().to_numpy().flatten()[-1]
     )
 
     current_price = float(
